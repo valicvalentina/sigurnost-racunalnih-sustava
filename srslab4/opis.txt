@@ -1,0 +1,148 @@
+
+0036531585, Valentina Valić
+
+
+
+Iz "Follow TCP Stream" može se isčitati sljedeće:
+
+........... ..!.."..'........ ..#..'........!..".....#....P...... .....'........... .38400,38400....'.......vt100...........Ubuntu 20.04.3 LTS
+
+...www login: llooggiinnddaattaa
+
+.
+
+Password: logindata
+
+.
+
+ 
+
+Login incorrect
+
+www login:
+
+Login timed out after 60 seconds.
+
+Prvi redak "........... ..!.."..'........ ..#..'........!..".....#....P...... .....'..........." Vjerovatno predstavlja prijenos nekih neprepoznatljivih znakova ili binarnih podataka. U drugom retku ".38400,38400....'.......vt100...........Ubuntu 20.04.3 LTS" vide se neki tekstualni podaci. Brojevi "38400", "38400" i "vt100" ukazuju na terminalni emulator dok "Ubuntu 20.04.3 LTS" predstavlja operativni sustav. U šestom retku "...www login: llooggiinnddaattaa" prepoznajemo unos za login gdje sam prije unijela login data što se prepoznaje iz "llooggiinnddaattaa". U retku "Password: logindata" prepoznaje se unos za lozinku te lozinka koju sam unijela, a koja je također glasila logindata. S obzirom da podaci za prijavu nisu bili ispravni, u terminalu sam dobila poruku "Login incorrect", što se također može isčitati u "Follow TCP Stream". Redak "Login timed out after 60 seconds." obavještava korisnika da je vremensko ograničenje za unos podataka isteklo nakon 60 sekundi.
+
+Ako koristimo protokol SSH te unesemo u terminal " ssh 198.51.100.10" u wiresharku sada možemo primjetiti pakete iz SSH protokola. Zatim uzmemo neki tih paketa te ponovo otvorimo "Follow TCP Stream". Kada sam ga otvorila prikazao mi se isječak iz TCP toka SSH sesije. Prva dva reda isječka sadrže informacije o verziji SSH protokola i korištenoj verziji OpenSSH-a i operativnom sustavu. Ostatak teksta predstavlja detalje o podržanim algoritmima za razmjenu ključeva i šifriranje u SSH sesiji, ali je većinom kodiran i nije čitljiv. 
+
+*************************************************************************************************
+Konfiguracija vatrozida
+
+Opis korišenih naredbi:
+-s <address> - izvor
+-d <address> - odredište
+-dport <port> - port na odredištu
+-j ACCEPT - promet se prihvaća
+-j DROP - promet se ne prihvaća
+-p <protocol> - korišteni protokol
+-A FORWARD - prosljeđivanje prometa
+-A INPUT - obrada ulaznih paketa
+U skriptu za konfiguraciju vatrozida sam dodala svoja pravila u skladu sa navedenim zahtjevima:
+
+1.Web poslužitelju (tcp /80) i DNS poslužitelju (udp/53 i tcp/53) pokrenutima na www se može pristupiti s bilo koje adrese (iz Interneta i iz lokalne mreže).
+$IPT -A FORWARD -p tcp -d 198.51.100.10 --dport 80 -j ACCEPT
+$IPT -A FORWARD -p udp -d 198.51.100.10 --dport 53 -j ACCEPT
+$IPT -A FORWARD -p tcp -d 198.51.100.10 --dport 53 -j ACCEPT
+
+2.SSH poslužitelju (na www) se može pristupiti samo s racunala PC iz lokalne mreže (LAN)
+$IPT -A FORWARD -s 10.0.0.20 -p tcp -d 198.51.100.10 --dport 22 -j ACCEPT
+
+3. S www je dozvoljen pristup poslužitelju database (LAN) na TCP portu 10000 te pristup  DNS poslužiteljima u Internetu (UDP i TCP port 53).
+$IPT -A FORWARD -s 198.51.100.10 -d 10.0.0.100 -p tcp  --dport 10000 -j ACCEPT
+$IPT -A FORWARD -s 198.51.100.10 -d 203.0.113.20 -p udp --dport 53 -j ACCEPT
+$IPT -A FORWARD -s 198.51.100.10 -d 203.0.113.20 -p tcp --dport 53 -j ACCEPT
+$IPT -A FORWARD -s 198.51.100.10 -d 203.0.113.10 -p udp --dport 53 -j ACCEPT
+$IPT -A FORWARD -s 198.51.100.10 -d 203.0.113.10 -p tcp --dport 53 -j ACCEPT
+
+4. S www je zabranjen pristup svim ostalim adresama i poslužiteljima
+5. Pristup svim ostalim adresama i poslužiteljima u DMZ je zabranjen.
+
+6. Pristup SSH poslužitelju na cvoru database, koji se nalazi u lokalnoj mreži LAN, dozvoljen je samo racunalima iz mreže LAN.
+$IPT -A FORWARD -s 10.0.0.0/24 -p tcp -d 10.0.0.100 --dport 22 -j ACCEPT
+
+7.Web poslužitelju na cvoru database, koji sluša na TCP portu 10000, može se pristupiti iskljucivo s racunala www koje se nalazi u DMZ (i s racunala iz mreže LAN).
+$IPT -A FORWARD -d 10.0.0.100 -s 198.51.100.10 -p tcp --dport 10000 -j ACCEPT
+$IPT -A FORWARD -d 10.0.0.100 -s 10.0.0.0/24 -p tcp --dport 10000 -j ACCEPT
+
+8. S racunala database je zabranjen pristup svim uslugama u Internetu i u DMZ.
+$IPT -A FORWARD -s 10.0.0.100 -d 198.51.100.10 -p tcp -j DROP
+$IPT -A FORWARD -s 10.0.0.100 -d 203.0.113.0/24 -p tcp -j DROP
+- te sam naredbe dodala odma na početak skripte, jer kada se skripta izvršava pravila se obrađuju slijedno, pa je potrebno odma dodati te zabrane
+
+9. Zabranjen je pristup svim ostalim uslugama na poslužitelju database (iz Interneta i iz DMZ)
+
+10. S racunala iz lokalne mreže (osim s database) se može pristupati svim racunalima u Internetu ali samo korištenjem protokola HTTP (tcp/80) i DNS (udp/53 i tcp/53).
+$IPT -A FORWARD -s 10.0.0.20 -d 203.0.113.0/24 -p tcp --dport 80 -j ACCEPT
+$IPT -A FORWARD -s 10.0.0.20 -d 203.0.113.0/24 -p udp --dport 53 -j ACCEPT
+$IPT -A FORWARD -s 10.0.0.20 -d 203.0.113.0/24 -p tcp --dport 53 -j ACCEPT
+
+11. Pristup iz vanjske mreže u lokalnu LAN mrežu je zabranjen.
+
+12.Na FW je pokrenut SSH poslužitelj kojem se može pristupiti samo iz lokalne mreže i to samo sa cvora PC.
+$IPT -A INPUT -s 10.0.0.20 -d 10.0.0.1 -j ACCEPT
+
+13. Pristup svim ostalim uslugama (portovima) na cvoru FW je zabranjen.
+
+Može se uočiti kako za 4.,5.,9., 11. i 13. nisam dodala naredbe. To je zato što su podrazumijevano pristupi zabranjeni ako ih nisam nigdje omogućila, a s obzirom da to nije bio slučaj nije onda bilo potrebno dodati naredbe.
+
+Nakon dodavanja naredbi spremila sam skriptu te ponovno otvorila terminal. Nakon što sam se pozicionirala u srs-lab/Lab4 redom sam upisivala naredbe "sudo ./prepare.sh", "sudo hcp FW.sh FW:" i "sudo himage FW sh ./FW.sh" kako bi se skripta pokrenula.
+
+Spajanje:
+
+Najprije sam se probala sa PC spojiti Telnet protokolom na server tako da sam otvorila terminal na PC-u te upisala "telnet 203.0.113.10". Nakon toga u terminalu dobivam mogućnost za login. 
+Nakon toga sam se probate spojiti sa PC-a na www protokolom SSH upisujući " ssh 198.51.100.10".Kada sam se spojila otvara mi se mogućnost unosa lozinke.
+
+
+
+Zatim sam se pokušavala spajati sa clienta tako da sam najprije na njemu otvorila terminal. Prvo sam upisala "curl http://www.example.edu/index.html" te sam dobila sljedeći html:
+
+<HTML>
+<H1>Test file - www.example.edu</H1>
+<p>This is a starting page of Web servera for SRS lab. (web server www)
+<p>Just a few lines of text...
+<p>bla bla bla
+<br>Horizontal line 
+<hr>
+</HTML>
+
+Nakon toga sam u terminal upisala "curl http://198.51.100.10/index.html" te sam dobila identičan html.
+
+
+
+Idući pokušaj spajanja bio je opet sa PC-a. Otvorila sam na njemu terminal te upisala "curl http://www.example.edu/index.html". Uspjela sam se spojiti i dobila sam ponovno isti html. Iduća naredba koju sam unijela u terminal bila je "curl http://10.0.0.100/index.html" no dobila sam poruku "Failed to connect to 10.0.0.100 port 80: Connection refused" jer se ne radi o ispravnoj IP adresi. Naime ako upišem "curl http://198.51.100.10/index.html" dobiti ću ponovno isti html s obzirom da je to ispravna IP adresa sa koje dohvaćamo taj html.
+
+
+Idući korak bila je provjera dostupnosti DNS poslužitelja na čvoru www s čvora client. Dakle nakon što sam otvorila terminal na clientu upisala sam "host www.example.com" čime sam dobila IP adresu od servera, tj. poruku "www.example.com" has address 203.0.113.10".
+
+
+Skeniranje alatom nmap
+
+Najprije sam pokušala provjeriti dostupnost TCP usluga u demilitariziranoj zoni (www) Otvorila sam terminal na clientu te sam upisala "himage client nmap -n -Pn "-p20-25,53,80,443" 198.51.100.10". U terminalu dobivam najprije poruku kako je nmap pokrenut, zatim "nmap scan report for 198.51.100.10" te "Host is up (0.00069s latency)". Osim toga mogu se isčitati neki portovi sa protokolima, njihova stanja te servisi.
+
+Također sam izvršila provjeru dostupnosti usluga u demilitariziranoj zoni računalima iz	privatne mreže	(čvor PC). Unijela sam u terminal naredbu " nmap -n -Pn "-p20-25,53,80,443" 198.51.100.10" i dobila ispis sličan prethodnom kada sam provjeravala dostupnost preko clienta.
+
+
+Zatim sam alatom nmap pokušala:
+
+1.skenirati TCP	i UDP portove
+Za skeniranje TCP portova u prethodnu naredbu sam dodala -sT, a za UDP portove -sU. 
+
+2.TCP syn scan 
+Otvorila sam terminal na PC-u te upisala nmap -sS 198.51.100.10, tj. IP od www. Dobiła sam listu otvorenih portova na ciljnoj adresi.
+
+3. Detekcija operacijskog sustava
+U terminalu na PC-u sam upisala nmap -O 198.51.100.10 te provela detekciju os-a gdje su mi Aggresive OS guesses bile različite verzije Linuxa.
+
+4. Detekcija verzija servisa
+U terminalu na PC-u sam upisala nmap -sV 198.51.100.10 te sam time dobila verzije servisa otvorene na ciljnom sustavu, a to su npr. ISC BIND 9.16.1 (Ubuntu Linux) te lighttpd 1.4.55.
+
+5. Općeniti scan
+U terminalu na PC-u sam upisala nmap -A 198.51.100.10 čime sam izvela općeniti scan. Općenitim scanom sam iščitala detekciju operacijskog sustava, detekciju verzija servisa, skeniranje rute (TRACEROUTE) te skeniranje sjećanja ciljnog sustava.
+
+
+
+
+
+

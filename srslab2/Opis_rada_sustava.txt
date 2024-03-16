@@ -1,0 +1,32 @@
+Opis rada sustava
+
+Usermgmt:
+
+Na početku se isčitava baza podataka te se iz nje podaci o userima, njihovim lozinkama te zastavica koja može poprimiti vrijednost 0 ili 1 spremaju u mapu gdje je ključ username, a vrijednost lozinka i zastavica zapisane kao string.
+
+Zatim se provjeravaju unesene naredbe.
+
+Za naredbu add i username ako ne postoji user kojem pripada taj username dodaje se user, lozinka i zastavica u bazu podataka te se u binarnu datoteku za toga usera sprema salt u binarnom obliku i hash. Također lozinka koja se sprema je u hashiranom obliku.
+
+Za naredbu passwd i username ako postoji username sustav traži da upišemo novu lozinku.
+
+Za naredbu forcepass i username ako postoji taj username u bazi zastavica će se za taj username postaviti na 1 te će se od tog usera pri loginu tražiti da promijeni lozinku.
+
+Za naredbu del i username ako postoji taj username briše se taj username te njegova lozinka i zastavica.
+
+
+Login:
+
+Prilikom logina ako se unese pogrešan username ili lozinka sustav će javiti “Username or password incorrect. “ bez da korisnik može saznati u čemu je problem, a u protivnom će javiti "Login successful." Ako je zastavica za određeni username postavljena na 1 i korisnik se uspio logirati od korisnika će se tražiti da promijeni lozinku.
+
+Zaštita zaporki:
+
+Sigurnost je zaštićena na način da svaka lozinka mora imati minimalno osam znakova te nije vidljiva tijekom unosa, a same lozinke su hashirane PBKDF2 algoritmom. 
+On je dobar za hashiranje iz više razloga:
+Prvo, koristi slučajno generirani niz bajtova (salt) što otežava napadaču brute-force napad. 
+
+Koristi HMAC (Hash-based Message Authentication Code) funkciju koja generira izvedenu nasumičnost iz lozinke i salt-a što je bitno za kripografski sigurne funkcije.
+
+Ponavlja određen broj iteracija kako bi izvodio ključeve iz lozinki. Ovo otežava napadačima da brzo izračunaju ključeve ili da koriste predmemoriranje kako bi ubrzali proces napada. 
+
+Osim toga,  PBKDF2 omogućuje parametrizaciju broja iteracija, duljine ključa i drugih parametara i time se poboljšava sigurnost.

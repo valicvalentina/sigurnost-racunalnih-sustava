@@ -1,0 +1,21 @@
+Pokretanje
+
+Kod se pokreće iz terminala tako da se pozicioniramo u folder u kojem se nalazi izvorni kod (npr. “/eclipse-workspace/lab2srs/src/lab2srs/“) te nakon toga upišemo java usermgmt.java ili  java login.java ovisno što želimo pokrenuti.
+
+Zatim u terminal upisujemo komande:
+Za usermgmt:
+
+Dodavanje usera
+add <<username>>
+
+Promjena lozinke
+passwd <<username>> 
+
+Forsiranje promjene lozinke korisničkog imena
+forcepass <<username>>
+
+Uklanjanje postojećeg korisničkog imena
+del <<username>>
+
+Za login:
+<<username>>
